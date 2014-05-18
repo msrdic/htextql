@@ -2,9 +2,10 @@ module Textql.Sqlite where
 
 import      Data.Maybe
 import      Data.List
-import      Data.Text (Text, pack)
+import      Data.Text (Text, pack, unpack)
 
 import      Database.Sqlite
+import      Database.Persist
 
 import      Control.Exception
 
@@ -52,17 +53,33 @@ type ColumnName = String
 schemaQuery :: TableName -> [ColumnName] -> [Type] -> String
 schemaQuery tableName columns types = createTable ++ fieldDefs
     where   createTable = "CREATE TABLE " ++ tableName
-            fieldDefs = propperQ (intercalate ", " $ map columnDef $ zip columns types)
-            propperQ string = "(" ++ string ++ ");"
+            fieldDefs = propperValues (intercalate ", " $ map columnDef $ zip columns types)
             columnDef :: (ColumnName, Type) -> String
             columnDef (colName, colType) = colName ++ " " ++ show colType
 
-withConnection :: Connection -> Text -> IO ()
+insertQuery :: TableName -> [String] -> String
+insertQuery tableName values = "INSERT INTO " ++ tableName ++ " VALUES " ++ values'
+    where values' = propperValues $ intercalate ", " (map quote values)
+
+batchInsertQuery :: TableName -> [[String]] -> String
+batchInsertQuery tableName values = "INSERT INTO " ++ tableName ++ " VALUES " ++ values' ++ ";"
+    where values'  = intercalate ", " valueStrings
+          valueStrings = map generateValueString values
+
+-- take a list of record values and construct a single
+-- values part of an insert statement
+generateValueString :: [String] -> String
+generateValueString = batchValues . (intercalate ", ") . (map quote)
+
+quote string = "'" ++ string ++ "'"
+propperValues string = (batchValues string) ++ ";"
+batchValues string = "(" ++ string ++ ")"
+
+withConnection :: Connection -> Text -> IO [PersistValue]
 withConnection connection query = do
+    print query
     statement   <-  prepare connection query
     result      <-  step statement
-    putStrLn $ show result
-    vals        <-  columns statement
-    putStrLn $ show vals
+    columns     <-  columns statement
     _           <-  finalize statement
-    putStrLn $ "Executed: " ++ (show query)
+    return columns

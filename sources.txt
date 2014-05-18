@@ -1,1 +1,1 @@
-All genomics data taken from ftp://ftp.ensembl.org/pub
+GFF3 format and example: https://www.broadinstitute.org/annotation/argo/help/gff3.html

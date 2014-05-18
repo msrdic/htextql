@@ -43,6 +43,22 @@ isTableNameFlag _ = False
 isHeaderFlag (Header _) = True
 isHeaderFlag _ = False
 
+isSourceFlag (Source _) = True
+isSourceFlag _ = False
+
+isDelimiterFlag (Delimiter _) = True
+isDelimiterFlag _ = False
+
+getDelimiter :: [Flag] -> String
+getDelimiter flags = case (find isDelimiterFlag flags) of
+        Nothing -> ","
+        Just (Delimiter delim) -> delim
+
+getSource :: [Flag] -> String
+getSource flags = case (find isSourceFlag flags) of
+        Nothing -> "stdin"
+        Just (Source sourceFile) -> sourceFile
+
 hasHeaderFlag :: [Flag] -> Bool
 hasHeaderFlag flags = case (find isHeaderFlag flags) of
         Nothing -> False
@@ -56,13 +72,13 @@ getTableName flags = case (find isTableNameFlag flags) of
 getColumnNames :: [Flag] -> T.Text -> [T.Text]
 getColumnNames flags firstLine = case firstLineIsHeader of
     False -> standardColumnNames $ (length . T.words) firstLine
-    True -> T.words $ T.replace separator "" firstLine
+    True -> T.words $ T.replace delimiter "" firstLine
     where firstLineIsHeader = hasHeaderFlag flags
-          separator = ","
+          delimiter = T.pack $ getDelimiter flags
 
 standardColumnNames :: Int -> [T.Text]
 standardColumnNames count = zipWith (T.append) (replicate count "column_") $ map (T.pack . show) [1 .. count]
 
 getTypes :: [Flag] -> String -> IO [Maybe Type]
-getTypes flags firstLine = mapM deduceType $ map T.unpack $ T.words $ T.replace separator "" $ T.pack firstLine
-    where separator = ","
+getTypes flags firstLine = mapM deduceType $ map T.unpack $ T.words $ T.replace delimiter "" $ T.pack firstLine
+    where delimiter = T.pack $ getDelimiter flags
