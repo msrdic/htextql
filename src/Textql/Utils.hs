@@ -6,6 +6,3 @@ import Data.Text (Text, replace)
 clean :: Text -> Text -> Text
 clean string delim = replace delim "" string
 
-removeDelim :: Text -> Text -> Text
-removeDelim t delim = replace delim "" t
-

@@ -1,22 +1,21 @@
 module Textql.Sqlite where
 
-import      Data.Maybe
-import      Data.List
+import              Data.Maybe
+import              Data.List
 import  qualified   Data.Text as T
 
-import      Database.Sqlite
-import      Database.Persist
+import              Database.Sqlite
+import              Database.Persist
 
-import      Textql.Types
+import              Textql.Types
 
--- let's write some simple database code
 type TableName = T.Text
 type ColumnName = T.Text
 
 schemaQuery :: TableName -> [ColumnName] -> [Type] -> T.Text
 schemaQuery tableName columns types = T.concat [createTable, fieldDefs]
-    where   createTable = createTablePrefix tableName
-            fieldDefs = propperValues (T.intercalate ", " $ map columnDef $ zip columns types)
+    where createTable = createTablePrefix tableName
+          fieldDefs = propperValues (T.intercalate ", " $ map columnDef $ zip columns types)
 
 columnDef :: (ColumnName, Type) -> T.Text
 columnDef (colName, colType) = T.concat [colName, " ", T.pack $ show colType]
