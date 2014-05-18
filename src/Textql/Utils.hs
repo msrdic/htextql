@@ -1,10 +1,10 @@
 module Textql.Utils where
 
-import Data.Text
+import Data.Text (Text, replace)
 
 -- clean a line of text by removing delimiters
-clean :: String -> String -> String
-clean string delim = unpack $ replace (pack delim) (pack "") (pack string)
+clean :: Text -> Text -> Text
+clean string delim = replace delim "" string
 
 removeDelim :: Text -> Text -> Text
 removeDelim t delim = replace delim "" t
