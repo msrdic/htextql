@@ -66,6 +66,9 @@ hasHeaderFlag flags = case (find isHeaderFlag flags) of
         Nothing -> False
         Just (Header b) -> if b == "true" then True else False
 
+isQueryFlag (Query _) = True
+isQueryFlag _ = False
+
 getSource :: [Flag] -> T.Text
 getSource flags = case (find isSourceFlag flags) of
         Nothing -> "stdin"
@@ -75,6 +78,11 @@ getTableName :: [Flag] -> T.Text
 getTableName flags = case (find isTableNameFlag flags) of
         Nothing -> defaultTableName
         Just (TableName tableName) -> T.pack tableName
+
+getQuery :: [Flag] -> T.Text
+getQuery flags = case (find isQueryFlag flags) of
+        Nothing -> ""
+        Just (Query q) -> T.pack q
 
 getColumnNames :: [Flag] -> T.Text -> [T.Text]
 getColumnNames flags firstLine = case firstLineIsHeader of

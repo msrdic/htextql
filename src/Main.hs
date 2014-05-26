@@ -23,6 +23,8 @@ main = do
 
     let flags = fst options
 
+    print flags
+
     let inputFileArg = getSource flags
     inputFile <- openFile (T.unpack inputFileArg) ReadMode
 
@@ -43,10 +45,10 @@ main = do
     connection <- open ":memory:"
     -- create schema
     schemaCreationResponse <- withConnection connection (schemaQuery tableName columnNames types)
-    print schemaCreationResponse
+    -- print schemaCreationResponse
     -- first insert
     firstRowInsertResponse <- withConnection connection (insertQuery tableName $ T.words $ clean firstLine d)
-    print firstRowInsertResponse
+    -- print firstRowInsertResponse
     -- other inserts
     contents <- TIO.hGetContents inputFile
     let ls = T.lines contents
@@ -54,10 +56,12 @@ main = do
         batchInsert = batchInsertQuery tableName cleanLines
     -- withConnection connection $ pack $ concat $ intersperse "" insertQueries
     batchInsertResponse <- withConnection connection batchInsert
-    print batchInsertResponse
+    -- print batchInsertResponse
     -- do one select...
-    countResponse <- withConnection connection $ T.concat ["SELECT count(*) from ", tableName, ";"]
-    print countResponse
+    -- countResponse <- withConnection connection $ T.concat ["SELECT count(*) from ", tableName, ";"]
+    -- print countResponse
+    queryResponse <- withConnection connection $ getQuery flags
+    print queryResponse
     -- close resources
     close connection
     hClose inputFile

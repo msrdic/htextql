@@ -38,8 +38,8 @@ generateValueString :: [T.Text] -> T.Text
 generateValueString = batchValues . (T.intercalate ", ") . (map quote)
 
 quote string = T.concat ["'", string, "'"]
-propperValues string = T.concat [(batchValues string), ";"]
-batchValues string = T.concat ["(", string, ")"]
+propperValues values = T.concat [batchValues values, ";"]
+batchValues values = T.concat ["(", values, ")"]
 
 withConnection :: Connection -> T.Text -> IO [PersistValue]
 withConnection connection query = do
