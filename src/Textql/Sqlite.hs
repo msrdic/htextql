@@ -14,20 +14,23 @@ import              Textql.Utils
 type TableName = Text
 type ColumnName = Text
 
+createTablePrefix :: Text -> Text
+createTablePrefix tableName = joinWithSpace ["CREATE TABLE", tableName]
+
+insertPrefix :: Text -> Text
+insertPrefix tableName = joinWithSpace ["INSERT INTO", tableName]
+
+-- Make an Sqlite column definition. Used for constructing
+-- a create schema query.
+columnDef :: (ColumnName, Type) -> Text
+columnDef (colName, colType) = joinWithSpace [colName, pack $ show colType]
+
 schemaQuery :: TableName -> [ColumnName] -> [Type] -> Text
 schemaQuery tableName columns types = concat [createTable, columnsDef]
     where createTable = createTablePrefix tableName
           columnsDef = propperValues $ joinWithColon columnDefs
           columnDefs = map columnDef columnsAndTypes
           columnsAndTypes = zip columns types
-
-createTablePrefix :: Text -> Text
-createTablePrefix tableName = joinWithSpace ["CREATE TABLE", tableName]
-
--- Make an Sqlite column definition. Used for constructing
--- a create schema query.
-columnDef :: (ColumnName, Type) -> Text
-columnDef (colName, colType) = joinWithSpace [colName, pack $ show colType]
 
 insertQuery :: TableName -> [Text] -> Text
 insertQuery tableName values = joinWithSpace [insertPrefix tableName, "VALUES", values']
@@ -38,9 +41,6 @@ batchInsertQuery :: TableName -> [[Text]] -> Text
 batchInsertQuery tableName values = joinWithSpace [insertPrefix tableName, "VALUES", values', ";"]
     where values'  = joinWithColon valueStrings
           valueStrings = map generateValueString values
-
-insertPrefix :: Text -> Text
-insertPrefix tableName = joinWithSpace ["INSERT INTO", tableName]
 
 -- take a list of record values and construct a single
 -- values part of an insert statement
