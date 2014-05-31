@@ -1,6 +1,6 @@
 module Textql.Sqlite where
 
--- we need this to avoid qualified Data.Text
+-- we need this to avoid qualified Data.Text import
 import              Prelude hiding (concat)
 
 import              Data.Text (Text, concat, pack)

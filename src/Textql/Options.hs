@@ -27,11 +27,25 @@ defaultTableName = "tbl"
 options :: [OptDescr Flag]
 options =
     [
-        Option ['d'] ["delimiter"]  (ReqArg Delimiter ",")              "Delimiter between fields -dlm tab for tab, -dlm 0x## to specify a character code in hex",
-        Option ['h'] ["header"]     (ReqArg Header "false")             "Treat file as having the first row as a header row",
-        Option ['s'] ["source"]     (ReqArg Source "stdin")             "Source file to load, or defaults to stdin",
-        Option ['q'] ["query"]      (ReqArg Query "")                   "SQL Command(s) to run on the data",
-        Option ['t'] ["table"]      (ReqArg TableName $ T.unpack defaultTableName) "Override the default table name (tbl)"
+        Option ['d'] ["delimiter"]
+               (ReqArg Delimiter ",")
+               "Delimiter between fields -dlm tab for tab, -dlm 0x## to specify a character code in hex",
+
+        Option ['h'] ["header"]
+               (ReqArg Header "false")
+               "Treat file as having the first row as a header row",
+
+        Option ['s'] ["source"]
+               (ReqArg Source "stdin")
+               "Source file to load, or defaults to stdin",
+
+        Option ['q'] ["query"]
+               (ReqArg Query "")
+               "SQL Command(s) to run on the data",
+
+        Option ['t'] ["table"]
+               (ReqArg TableName $ T.unpack defaultTableName)
+               "Override the default table name (tbl)"
     ]
 
 -- parse program command-line options
