@@ -1,11 +1,16 @@
 module Textql.Options where
 
+import              Prelude hiding (words)
+
 import              System.Console.GetOpt
-import              Data.List
-import  qualified   Data.Text as T
+
+import              Data.List (find)
+import              Data.Text (Text, pack, unpack, words, replace, append)
+import              Data.Maybe
+
 import              Textql.Sqlite
 import              Textql.Types
-import              Data.Maybe
+import              Textql.Utils
 
 -- | define all usable flags
 data Flag = Delimiter String
@@ -17,7 +22,7 @@ data Flag = Delimiter String
 
 -- if the TableName command-line option isn't supplied,
 -- use this as table name
-defaultTableName :: T.Text
+defaultTableName :: Text
 defaultTableName = "tbl"
 
 -- command-line options
@@ -44,7 +49,7 @@ options =
                "SQL Command(s) to run on the data",
 
         Option ['t'] ["table"]
-               (ReqArg TableName $ T.unpack defaultTableName)
+               (ReqArg TableName $ unpack defaultTableName)
                "Override the default table name (tbl)"
     ]
 
@@ -54,8 +59,9 @@ programOptions :: [String] -> IO ([Flag], [String])
 programOptions argv =
     case getOpt Permute options argv of
           (o,n,[]  ) -> return (o,n)
-          (_,_,errs) -> ioError (userError (concat errs ++ usageInfo header options))
-      where header = "Usage: textql [OPTION...]"
+          (_,_,errs) -> ioError $ userError $ constructUserError errs
+      where constructUserError errs = concat errs ++ usageInfo header options
+            header = "Usage: textql [OPTION...]"
 
 
 isTableNameFlag (TableName _) = True
@@ -73,41 +79,53 @@ isDelimiterFlag _ = False
 isQueryFlag (Query _) = True
 isQueryFlag _ = False
 
-getDelimiter :: [Flag] -> T.Text
+getDelimiter :: [Flag] -> Text
 getDelimiter flags = case (find isDelimiterFlag flags) of
         Nothing -> ","
-        Just (Delimiter delim) -> T.pack delim
+        Just (Delimiter delim) -> pack delim
 
 hasHeaderFlag :: [Flag] -> Bool
 hasHeaderFlag flags = case (find isHeaderFlag flags) of
         Nothing -> False
         Just (Header b) -> if b == "true" then True else False
 
-getSource :: [Flag] -> T.Text
+getSource :: [Flag] -> Text
 getSource flags = case (find isSourceFlag flags) of
         Nothing -> "stdin"
-        Just (Source sourceFile) -> T.pack sourceFile
+        Just (Source sourceFile) -> pack sourceFile
 
-getTableName :: [Flag] -> T.Text
+getTableName :: [Flag] -> Text
 getTableName flags = case (find isTableNameFlag flags) of
         Nothing -> defaultTableName
-        Just (TableName tableName) -> T.pack tableName
+        Just (TableName tableName) -> pack tableName
 
-getQuery :: [Flag] -> T.Text
+getQuery :: [Flag] -> Text
 getQuery flags = case (find isQueryFlag flags) of
         Nothing -> ""
-        Just (Query q) -> T.concat ["SELECT count(*) FROM ", getTableName flags, ";"] -- T.pack q
+        Just (Query q) -> pack q
 
-getColumnNames :: [Flag] -> T.Text -> [T.Text]
+-- | getColumnNames returns a list of column names that should
+-- be used for constructing a database table. If the first line
+-- of the input file has no header (supplied via the command line
+-- argument), then a default list of column names is constructed
+-- and returned (column_1, column_2 etc.). If the first line contains
+-- header information, then that line is cleaned up and parsed for
+-- column names.
+getColumnNames :: [Flag] -> Text -> [Text]
 getColumnNames flags firstLine = case firstLineIsHeader of
-    False -> standardColumnNames $ (length . T.words) firstLine
-    True -> T.words $ T.replace delimiter "" firstLine
+    False -> standardColumnNames $ (length . words) firstLine
+    True -> words $ clean delimiter firstLine
     where firstLineIsHeader = hasHeaderFlag flags
           delimiter = getDelimiter flags
 
-standardColumnNames :: Int -> [T.Text]
-standardColumnNames count = zipWith (T.append) (replicate count "column_") $ map (T.pack . show) [1 .. count]
+-- | Make standard column names.
+standardColumnNames :: Int -> [Text]
+standardColumnNames count = zipWith (append) (replicate count "column_") $ columnOrds
+    where columnOrds = map (pack . show) [1 .. count]
 
-getTypes :: [Flag] -> T.Text -> IO [Maybe Type]
-getTypes flags firstLine = mapM deduceType $ map T.unpack $ T.words $ T.replace delimiter "" firstLine
-    where delimiter = getDelimiter flags
+-- | Deduce types of values from a sample line.
+getTypes :: [Flag] -> Text -> IO [Maybe Type]
+getTypes flags firstLine = mapM deduceType $ textValues
+    where textValues = map unpack values
+          values = words $ clean delimiter firstLine
+          delimiter = getDelimiter flags
