@@ -56,6 +56,9 @@ isSourceFlag _ = False
 isDelimiterFlag (Delimiter _) = True
 isDelimiterFlag _ = False
 
+isQueryFlag (Query _) = True
+isQueryFlag _ = False
+
 getDelimiter :: [Flag] -> T.Text
 getDelimiter flags = case (find isDelimiterFlag flags) of
         Nothing -> ","
@@ -65,9 +68,6 @@ hasHeaderFlag :: [Flag] -> Bool
 hasHeaderFlag flags = case (find isHeaderFlag flags) of
         Nothing -> False
         Just (Header b) -> if b == "true" then True else False
-
-isQueryFlag (Query _) = True
-isQueryFlag _ = False
 
 getSource :: [Flag] -> T.Text
 getSource flags = case (find isSourceFlag flags) of
@@ -82,7 +82,7 @@ getTableName flags = case (find isTableNameFlag flags) of
 getQuery :: [Flag] -> T.Text
 getQuery flags = case (find isQueryFlag flags) of
         Nothing -> ""
-        Just (Query q) -> T.pack q
+        Just (Query q) -> T.concat ["SELECT count(*) FROM ", getTableName flags, ";"] -- T.pack q
 
 getColumnNames :: [Flag] -> T.Text -> [T.Text]
 getColumnNames flags firstLine = case firstLineIsHeader of

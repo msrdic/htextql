@@ -2,19 +2,19 @@
 -- | Main entry point to the application.
 module Main where
 
-import Textql.Options
-import Textql.Sqlite
-import Textql.Utils
-import Data.Maybe
+import              Textql.Options
+import              Textql.Sqlite
+import              Textql.Utils
+import              Data.Maybe
 
-import Database.Sqlite
+import              Database.Sqlite
 
-import      System.Environment
-import      System.IO
+import              System.Environment
+import              System.IO
 
-import  qualified       Data.Text as T
-import  qualified       Data.Text.IO as TIO
-import      Data.List
+import  qualified   Data.Text as T
+import  qualified   Data.Text.IO as TIO
+import              Data.List
 
 -- | The main entry point.
 main :: IO ()
@@ -22,9 +22,6 @@ main = do
     options <- getArgs >>= programOptions
 
     let flags = fst options
-
-    print flags
-
     let inputFileArg = getSource flags
     inputFile <- openFile (T.unpack inputFileArg) ReadMode
 
@@ -44,21 +41,20 @@ main = do
     -- ready for inserting data
     connection <- open ":memory:"
     -- create schema
-    schemaCreationResponse <- withConnection connection (schemaQuery tableName columnNames types)
-    -- print schemaCreationResponse
-    -- first insert
-    firstRowInsertResponse <- withConnection connection (insertQuery tableName $ T.words $ clean firstLine d)
-    -- print firstRowInsertResponse
-    -- other inserts
+    let createSchemaQuery = schemaQuery tableName columnNames types
+    schemaCreationResponse <- withConnection connection createSchemaQuery
+    -- we already read first and/or second line
+    -- so we should insert that one which contains content
+    let firstLineValues = insertQuery tableName $ T.words $ clean firstLine d
+    firstRowInsertResponse <- withConnection connection firstLineValues
+
+    -- other values
     contents <- TIO.hGetContents inputFile
     let ls = T.lines contents
         cleanLines = map (T.words . (flip clean) d) ls
         batchInsert = batchInsertQuery tableName cleanLines
-    -- withConnection connection $ pack $ concat $ intersperse "" insertQueries
+
     batchInsertResponse <- withConnection connection batchInsert
-    -- print batchInsertResponse
-    -- do one select...
-    -- countResponse <- withConnection connection $ T.concat ["SELECT count(*) from ", tableName, ";"]
     -- print countResponse
     queryResponse <- withConnection connection $ getQuery flags
     print queryResponse
