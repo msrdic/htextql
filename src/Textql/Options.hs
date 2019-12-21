@@ -1,3 +1,4 @@
+{-# LANGUAGE OverloadedStrings #-}
 module Textql.Options where
 
 import              Prelude hiding (words)

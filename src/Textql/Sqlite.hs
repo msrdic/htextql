@@ -1,3 +1,4 @@
+{-# LANGUAGE OverloadedStrings #-}
 module Textql.Sqlite where
 
 -- we need this to avoid qualified Data.Text import

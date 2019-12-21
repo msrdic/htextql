@@ -1,3 +1,4 @@
+{-# LANGUAGE OverloadedStrings #-}
 module Textql.Utils where
 
 import              Prelude hiding (concat)
