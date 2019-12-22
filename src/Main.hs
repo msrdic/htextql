@@ -16,10 +16,13 @@ import  qualified   Data.Text as T
 import  qualified   Data.Text.IO as TIO
 import              Data.List
 
+import System.Log.FastLogger
+
 -- | The main entry point.
 main :: IO ()
 main = do
     options <- getArgs >>= programOptions
+    logger <- newStdoutLoggerSet 1024
 
     let flags = fst options
     let inputFileArg = getSource flags
@@ -28,8 +31,13 @@ main = do
     let firstRead = TIO.hGetLine inputFile
     firstLine <- firstRead
 
+    pushLogStrLn logger (toLogStr $ T.concat ["first line: ", firstLine])
+
     let tableName = getTableName flags
         columnNames = getColumnNames flags firstLine
+
+    pushLogStrLn logger (toLogStr $ T.concat ["table name: ", tableName])
+    pushLogStrLn logger (toLogStr $ T.concat $ "column names: ": columnNames)
 
     let secondRead = if (hasHeaderFlag flags) then (TIO.hGetLine inputFile) else return firstLine
     secondLine <- secondRead
@@ -42,10 +50,13 @@ main = do
     connection <- open ":memory:"
     -- create schema
     let createSchemaQuery = schemaQuery tableName columnNames types
+    pushLogStrLn logger (toLogStr $ T.concat ["create schema query: ", createSchemaQuery])
     schemaCreationResponse <- withConnection connection createSchemaQuery
+    
     -- we already read first and/or second line
     -- so we should insert that one which contains content
     let firstLineValues = insertQuery tableName $ T.words $ clean firstLine d
+    pushLogStrLn logger (toLogStr $ T.concat ["first line insert: ", firstLineValues])
     firstRowInsertResponse <- withConnection connection firstLineValues
 
     -- other values
@@ -53,6 +64,7 @@ main = do
     let ls = T.lines contents
         cleanLines = map (T.words . (flip clean) d) ls
         batchInsert = batchInsertQuery tableName cleanLines
+    pushLogStrLn logger (toLogStr $ T.concat ["batch insert: ", batchInsert])
 
     batchInsertResponse <- withConnection connection batchInsert
     -- print countResponse
