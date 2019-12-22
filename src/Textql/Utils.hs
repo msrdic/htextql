@@ -6,7 +6,7 @@ import              Data.Text (Text, replace, intercalate, concat)
 
 -- clean a line of text by removing delimiters
 clean :: Text -> Text -> Text
-clean string delim = replace delim "" string
+clean string delim = replace delim " " string
 
 joinWithSpace :: [Text] -> Text
 joinWithSpace = intercalate " "

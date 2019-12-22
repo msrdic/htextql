@@ -115,7 +115,7 @@ getQuery flags = case (find isQueryFlag flags) of
 getColumnNames :: [Flag] -> Text -> [Text]
 getColumnNames flags firstLine = case firstLineIsHeader of
     False -> standardColumnNames $ (length . words) firstLine
-    True -> words $ clean delimiter firstLine
+    True -> words $ clean firstLine delimiter
     where firstLineIsHeader = hasHeaderFlag flags
           delimiter = getDelimiter flags
 
@@ -128,5 +128,5 @@ standardColumnNames count = zipWith (append) (replicate count "column_") $ colum
 getTypes :: [Flag] -> Text -> IO [Maybe Type]
 getTypes flags firstLine = mapM deduceType $ textValues
     where textValues = map unpack values
-          values = words $ clean delimiter firstLine
+          values = words $ clean firstLine delimiter
           delimiter = getDelimiter flags
