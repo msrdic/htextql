@@ -2,21 +2,21 @@
 -- | Main entry point to the application.
 module Main where
 
-import              Textql.Options
-import              Textql.Sqlite
-import              Textql.Utils
-import              Data.Maybe
+import           Data.Maybe
+import           Textql.Options
+import           Textql.Sqlite
+import           Textql.Utils
 
-import              Database.Sqlite
+import           Database.Sqlite
 
-import              System.Environment
-import              System.IO
+import           System.Environment
+import           System.IO
 
-import  qualified   Data.Text as T
-import  qualified   Data.Text.IO as TIO
-import              Data.List
+import           Data.List
+import qualified Data.Text             as T
+import qualified Data.Text.IO          as TIO
 
-import System.Log.FastLogger
+import           System.Log.FastLogger
 
 -- | The main entry point.
 main :: IO ()
@@ -52,12 +52,14 @@ main = do
     let createSchemaQuery = schemaQuery tableName columnNames types
     pushLogStrLn logger (toLogStr $ T.concat ["create schema query: ", createSchemaQuery])
     schemaCreationResponse <- withConnection connection createSchemaQuery
-    
+    pushLogStrLn logger (toLogStr $ T.concat ["schema creation response: ", T.pack $ show schemaCreationResponse])
+
     -- we already read first and/or second line
     -- so we should insert that one which contains content
     let firstLineValues = insertQuery tableName $ T.words $ clean firstLine d
     pushLogStrLn logger (toLogStr $ T.concat ["first line insert: ", firstLineValues])
     firstRowInsertResponse <- withConnection connection firstLineValues
+    pushLogStrLn logger (toLogStr $ T.concat ["first line insert response: ", T.pack $ show firstRowInsertResponse])
 
     -- other values
     contents <- TIO.hGetContents inputFile
@@ -67,9 +69,13 @@ main = do
     pushLogStrLn logger (toLogStr $ T.concat ["batch insert: ", batchInsert])
 
     batchInsertResponse <- withConnection connection batchInsert
+    pushLogStrLn logger (toLogStr $ T.concat ["batch insert response: ", T.pack $ show batchInsertResponse])
     -- print countResponse
+    pushLogStrLn logger (toLogStr $ T.concat ["command line query: ", getQuery flags])
     queryResponse <- withConnection connection $ getQuery flags
+    pushLogStrLn logger (toLogStr $ T.concat ["query response: ", T.pack $ show queryResponse])
     print queryResponse
     -- close resources
     close connection
     hClose inputFile
+    
