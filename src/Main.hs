@@ -31,8 +31,6 @@ main = do
     let firstRead = TIO.hGetLine inputFile
     firstLine <- firstRead
 
-    pushLogStrLn logger (toLogStr $ T.concat ["first line: ", firstLine])
-
     let tableName = getTableName flags
         columnNames = getColumnNames flags firstLine
 
@@ -57,19 +55,15 @@ main = do
     -- we already read first and/or second line
     -- so we should insert that one which contains content
     let firstLineValues = insertQuery tableName $ T.words $ clean firstLine d
-    pushLogStrLn logger (toLogStr $ T.concat ["first line insert: ", firstLineValues])
     firstRowInsertResponse <- withConnection connection firstLineValues
-    pushLogStrLn logger (toLogStr $ T.concat ["first line insert response: ", T.pack $ show firstRowInsertResponse])
 
     -- other values
     contents <- TIO.hGetContents inputFile
     let ls = T.lines contents
         cleanLines = map (T.words . (flip clean) d) ls
         batchInsert = batchInsertQuery tableName cleanLines
-    pushLogStrLn logger (toLogStr $ T.concat ["batch insert: ", batchInsert])
 
     batchInsertResponse <- withConnection connection batchInsert
-    pushLogStrLn logger (toLogStr $ T.concat ["batch insert response: ", T.pack $ show batchInsertResponse])
     -- print countResponse
     pushLogStrLn logger (toLogStr $ T.concat ["command line query: ", getQuery flags])
     queryResponse <- withConnection connection $ getQuery flags
