@@ -1,17 +1,18 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Textql.Options where
 
-import              Prelude hiding (words)
+import           Prelude               hiding (words)
 
-import              System.Console.GetOpt
+import           System.Console.GetOpt
 
-import              Data.List (find)
-import              Data.Text (Text, pack, unpack, words, replace, append)
-import              Data.Maybe
+import           Data.List             (find)
+import           Data.Maybe
+import           Data.Text             (Text, append, concat, pack, replace,
+                                        toLower, unpack, words)
 
-import              Textql.Sqlite
-import              Textql.Types
-import              Textql.Utils
+import           Textql.Sqlite
+import           Textql.Types
+import           Textql.Utils
 
 -- | define all usable flags
 data Flag = Delimiter String
@@ -61,48 +62,48 @@ programOptions argv =
     case getOpt Permute options argv of
           (o,n,[]  ) -> return (o,n)
           (_,_,errs) -> ioError $ userError $ constructUserError errs
-      where constructUserError errs = concat errs ++ usageInfo header options
+      where constructUserError errs = Prelude.concat errs ++ usageInfo header options
             header = "Usage: textql [OPTION...]"
 
 
 isTableNameFlag (TableName _) = True
-isTableNameFlag _ = False
+isTableNameFlag _             = False
 
 isHeaderFlag (Header _) = True
-isHeaderFlag _ = False
+isHeaderFlag _          = False
 
 isSourceFlag (Source _) = True
-isSourceFlag _ = False
+isSourceFlag _          = False
 
 isDelimiterFlag (Delimiter _) = True
-isDelimiterFlag _ = False
+isDelimiterFlag _             = False
 
 isQueryFlag (Query _) = True
-isQueryFlag _ = False
+isQueryFlag _         = False
 
 getDelimiter :: [Flag] -> Text
 getDelimiter flags = case (find isDelimiterFlag flags) of
-        Nothing -> ","
+        Nothing                -> ","
         Just (Delimiter delim) -> pack delim
 
 hasHeaderFlag :: [Flag] -> Bool
 hasHeaderFlag flags = case (find isHeaderFlag flags) of
-        Nothing -> False
+        Nothing         -> False
         Just (Header b) -> if b == "true" then True else False
 
 getSource :: [Flag] -> Text
 getSource flags = case (find isSourceFlag flags) of
-        Nothing -> "stdin"
+        Nothing                  -> "stdin"
         Just (Source sourceFile) -> pack sourceFile
 
 getTableName :: [Flag] -> Text
 getTableName flags = case (find isTableNameFlag flags) of
-        Nothing -> defaultTableName
+        Nothing                    -> defaultTableName
         Just (TableName tableName) -> pack tableName
 
 getQuery :: [Flag] -> Text
 getQuery flags = case (find isQueryFlag flags) of
-        Nothing -> ""
+        Nothing        -> ""
         Just (Query q) -> pack q
 
 -- | getColumnNames returns a list of column names that should
@@ -115,7 +116,7 @@ getQuery flags = case (find isQueryFlag flags) of
 getColumnNames :: [Flag] -> Text -> [Text]
 getColumnNames flags firstLine = case firstLineIsHeader of
     False -> standardColumnNames $ (length . words) firstLine
-    True -> words $ clean firstLine delimiter
+    True  -> uniqueColumnNames $ words $ toLower $ clean firstLine delimiter
     where firstLineIsHeader = hasHeaderFlag flags
           delimiter = getDelimiter flags
 
@@ -123,6 +124,17 @@ getColumnNames flags firstLine = case firstLineIsHeader of
 standardColumnNames :: Int -> [Text]
 standardColumnNames count = zipWith (append) (replicate count "column_") $ columnOrds
     where columnOrds = map (pack . show) [1 .. count]
+
+uniqueColumnNames :: [Text] -> [Text]
+uniqueColumnNames []   = []
+uniqueColumnNames cols = uniqueColumnNames' 1 cols
+
+uniqueColumnNames' :: Int -> [Text] -> [Text]
+uniqueColumnNames' _ [] = []
+uniqueColumnNames' i (c:cs)  = let duplicate = find (==c) cs in
+                             case duplicate of
+                               Just _ -> (Data.Text.concat [c, pack "_", pack $ show i]):uniqueColumnNames' (i + 1) cs
+                               Nothing -> c:uniqueColumnNames' i cs
 
 -- | Deduce types of values from a sample line.
 getTypes :: [Flag] -> Text -> IO [Maybe Type]
