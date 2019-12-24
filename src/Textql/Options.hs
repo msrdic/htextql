@@ -1,14 +1,14 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Textql.Options where
 
-import           Prelude               hiding (words)
+import           Prelude               hiding (words, tail, reverse, head)
 
 import           System.Console.GetOpt
 
 import           Data.List             (find)
 import           Data.Maybe
 import           Data.Text             (Text, append, concat, pack, replace,
-                                        toLower, unpack, words)
+                                        toLower, unpack, words, tail, reverse, head)
 
 import           Textql.Sqlite
 import           Textql.Types
@@ -133,8 +133,23 @@ uniqueColumnNames' :: Int -> [Text] -> [Text]
 uniqueColumnNames' _ [] = []
 uniqueColumnNames' i (c:cs)  = let duplicate = find (==c) cs in
                              case duplicate of
-                               Just _ -> (Data.Text.concat [c, pack "_", pack $ show i]):uniqueColumnNames' (i + 1) cs
+                               Just _ -> (uniqueColumnName c i) : uniqueColumnNames' (i + 1) cs
                                Nothing -> c:uniqueColumnNames' i cs
+
+uniqueColumnName :: Text -> Int -> Text
+uniqueColumnName "" i = Data.Text.concat ["", pack "_", pack $ show i]
+uniqueColumnName col i = if charIsQuote (head col)
+                              then uniqueColumnNameQuoted col i
+                              else uniqueColumnNameUnquoted col i
+charIsQuote :: Char -> Bool
+charIsQuote '\"' = True
+charIsQuote '\'' = True
+charIsQuote _ = False
+
+uniqueColumnNameQuoted colName i = quote $ suffixWith i $ unqoute colName
+uniqueColumnNameUnquoted colName i = suffixWith i colName
+unqoute = tail . reverse . tail . reverse
+suffixWith i colName = Data.Text.concat [colName, "_", pack $ show i]
 
 -- | Deduce types of values from a sample line.
 getTypes :: [Flag] -> Text -> IO [Maybe Type]

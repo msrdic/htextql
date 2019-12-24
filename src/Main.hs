@@ -35,7 +35,7 @@ main = do
         columnNames = getColumnNames flags firstLine
 
     pushLogStrLn logger (toLogStr $ T.concat ["table name: ", tableName])
-    pushLogStrLn logger (toLogStr $ T.concat $ "column names: ": columnNames)
+    pushLogStrLn logger (toLogStr $ T.concat ["column names: ", T.intercalate ", " columnNames])
 
     let secondRead = if (hasHeaderFlag flags) then (TIO.hGetLine inputFile) else return firstLine
     secondLine <- secondRead
