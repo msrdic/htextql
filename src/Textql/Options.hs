@@ -1,14 +1,15 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Textql.Options where
 
-import           Prelude               hiding (words, tail, reverse, head)
+import           Prelude               hiding (head, reverse, tail, words)
 
 import           System.Console.GetOpt
 
 import           Data.List             (find)
 import           Data.Maybe
-import           Data.Text             (Text, append, concat, pack, replace,
-                                        toLower, unpack, words, tail, reverse, head)
+import           Data.Text             (Text, append, concat, head, pack,
+                                        replace, reverse, tail, toLower, unpack,
+                                        words)
 
 import           Textql.Sqlite
 import           Textql.Types
@@ -144,7 +145,7 @@ uniqueColumnName col i = if charIsQuote (head col)
 charIsQuote :: Char -> Bool
 charIsQuote '\"' = True
 charIsQuote '\'' = True
-charIsQuote _ = False
+charIsQuote _    = False
 
 uniqueColumnNameQuoted colName i = quote $ suffixWith i $ unqoute colName
 uniqueColumnNameUnquoted colName i = suffixWith i colName

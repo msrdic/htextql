@@ -72,4 +72,4 @@ main = do
     -- close resources
     close connection
     hClose inputFile
-    
+

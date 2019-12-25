@@ -1,8 +1,8 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Textql.Utils where
 
-import              Prelude hiding (concat)
-import              Data.Text (Text, replace, intercalate, concat)
+import           Data.Text (Text, concat, intercalate, replace)
+import           Prelude   hiding (concat)
 
 -- clean a line of text by removing delimiters
 clean :: Text -> Text -> Text

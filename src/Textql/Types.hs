@@ -1,7 +1,7 @@
 module Textql.Types where
 
-import          Data.Maybe
-import          Control.Exception
+import           Control.Exception
+import           Data.Maybe
 
 -- once we have the command line parsing code
 -- we can implement some kind of smart data typing
@@ -9,9 +9,9 @@ import          Control.Exception
 data Type = IntegerT | RealT | TextT deriving Eq
 
 instance Show Type where
-    show IntegerT   = "INTEGER"
-    show RealT      = "REAL"
-    show TextT      = "TEXT"
+    show IntegerT = "INTEGER"
+    show RealT    = "REAL"
+    show TextT    = "TEXT"
 
 -- a function for deducing a type of a column
 -- try parsing a value as an Integer, then as a Real
