@@ -54,16 +54,12 @@ main = do
 
     -- we already read first and/or second line
     -- so we should insert that one which contains content
-    let firstLineValues = insertQuery tableName $ T.words $ clean firstLine d
+    let firstLineValues = insertQuery tableName $ csvParseLine firstLine (T.head d)
     firstRowInsertResponse <- withConnection connection firstLineValues
 
     -- other values
-    contents <- TIO.hGetContents inputFile
-    let ls = T.lines contents
-        cleanLines = map (T.words . (flip clean) d) ls
-        batchInsert = batchInsertQuery tableName cleanLines
+    insertRow connection inputFile d tableName 1 logger
 
-    batchInsertResponse <- withConnection connection batchInsert
     -- print countResponse
     pushLogStrLn logger (toLogStr $ T.concat ["command line query: ", getQuery flags])
     queryResponse <- withConnection connection $ getQuery flags
@@ -73,3 +69,16 @@ main = do
     close connection
     hClose inputFile
 
+insertRow conn inf d tableName n logger = do
+    eof <- hIsEOF inf
+    if eof == False
+        then do
+           line <- TIO.hGetLine inf
+           let query = insertQuery tableName $ csvParseLine line (T.head d)
+           insertResponse <- withConnection conn query
+           if mod n 1000 == 0
+            then pushLogStrLn logger (toLogStr $ T.concat ["inserted ", T.pack $ show n, " rows."])
+            else return ()
+           insertRow conn inf d tableName (n + 1) logger
+        else
+            return ()
