@@ -4,9 +4,9 @@ module Textql.Sqlite where
 -- we need this to avoid qualified Data.Text import
 import           Prelude          hiding (concat)
 
-import           Data.Text        (Text, concat, pack)
+import           Data.Text        (Text, concat, pack, replace)
 
-import           Database.Persist
+import           Database.Persist hiding (replace)
 import           Database.Sqlite
 
 import           Textql.Types
@@ -36,17 +36,7 @@ schemaQuery tableName columns types = concat [createTable, columnsDef]
 insertQuery :: TableName -> [Text] -> Text
 insertQuery tableName values = joinWithSpace [insertPrefix tableName, "VALUES", values']
     where values' = (propperValues . joinWithColon) quotedValues
-          quotedValues = map quote values
-
-batchInsertQuery :: TableName -> [[Text]] -> Text
-batchInsertQuery tableName values = joinWithSpace [insertPrefix tableName, "VALUES", values', ";"]
-    where values'  = joinWithColon valueStrings
-          valueStrings = map generateValueString values
-
--- take a list of record values and construct a single
--- values part of an insert statement
-generateValueString :: [Text] -> Text
-generateValueString = batchValues . joinWithColon . (map quote)
+          quotedValues = map (quote . replace "'" "''") values
 
 withConnection :: Connection -> Text -> IO [PersistValue]
 withConnection connection query = do

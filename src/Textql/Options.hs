@@ -116,10 +116,10 @@ getQuery flags = case (find isQueryFlag flags) of
 -- column names.
 getColumnNames :: [Flag] -> Text -> [Text]
 getColumnNames flags firstLine = case firstLineIsHeader of
-    False -> standardColumnNames $ (length . words) firstLine
-    True  -> uniqueColumnNames $ words $ toLower $ clean firstLine delimiter
+    False -> standardColumnNames $ length $ csvParseLine firstLine delimiter
+    True  -> uniqueColumnNames $ csvParseLine firstLine delimiter
     where firstLineIsHeader = hasHeaderFlag flags
-          delimiter = getDelimiter flags
+          delimiter = head $ getDelimiter flags
 
 -- | Make standard column names.
 standardColumnNames :: Int -> [Text]
@@ -127,8 +127,7 @@ standardColumnNames count = zipWith (append) (replicate count "column_") $ colum
     where columnOrds = map (pack . show) [1 .. count]
 
 uniqueColumnNames :: [Text] -> [Text]
-uniqueColumnNames []   = []
-uniqueColumnNames cols = uniqueColumnNames' 1 cols
+uniqueColumnNames = map quote . uniqueColumnNames' 1
 
 uniqueColumnNames' :: Int -> [Text] -> [Text]
 uniqueColumnNames' _ [] = []
